@@ -2,7 +2,7 @@
 #include "kernel/stat.h"
 #include "user/user.h"
 
-
+// argc -> argument count, argv -> argument vector
 int main(int argc, char *argv[]) {
     if (argc != 2) {
         printf("Usage: sleep <time>\n");
