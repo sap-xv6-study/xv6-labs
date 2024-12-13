@@ -24,8 +24,8 @@ void gen_pipe_stage(int read_from_parent_fd)
     int is_child_exists = FALSE;
     int p[2]; // pipe to communicate with child process. p[0]: read end / p[1]: write end
     int org;  // original prime number passed from the parent
-    int res = read(read_from_parent_fd, &org, BYTES_OF_INT);
 
+    int res = read(read_from_parent_fd, &org, BYTES_OF_INT);
     if (res < 0) {
         close(read_from_parent_fd);
         fprintf(2, "consumer<%d>: initial read failed\n", depth);
@@ -64,15 +64,15 @@ void gen_pipe_stage(int read_from_parent_fd)
             int pid = fork();
             if (pid > 0) {
                 is_child_exists = TRUE;
-                close(p[0]);
-                if (write(p[1], &x, BYTES_OF_INT) <= 0) {
+                close(p[0]); // close read end of the pipe connected to the child
+                if (write(p[1], &x, BYTES_OF_INT) < BYTES_OF_INT) {
                     fprintf(2, "consumer<%d>: initial write to the child failed.\n", depth);
                     cleanup_pipe(is_child_exists, read_from_parent_fd, p[1]);
                     return;
                 }
             } else if (pid == 0) {
-                close(read_from_parent_fd); // close read_from_parent_fd because its ownership belongs to the parent
-                close(p[1]);
+                close(read_from_parent_fd); // close read_from_parent_fd because its ownership is held by the parent
+                close(p[1]);                // close write end of the pipe connected to the parent
                 gen_pipe_stage(p[0]);
                 return;
             } else {
