@@ -104,15 +104,15 @@ int main()
         for (int i = 2; i < 280; ++i) {
             int res = write(p[1], &i, BYTES_OF_INT);
             if (res < 0) {
-                close(p[1]);
-                wait((void*)0);
+                fprintf(2, "top level process: write failed.\n");
+                break;
             }
         }
         close(p[1]);
         wait((void*)0);
     } else if (pid == 0) { // consumer
         close(p[1]);
-        gen_pipe_stage(p[0]);
+        gen_pipe_stage(p[0]); // NOTE: this function is responsible of closing p[0]
     } else {
         fprintf(2, "fork error.\n");
         exit(1);
