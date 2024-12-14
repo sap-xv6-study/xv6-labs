@@ -23,6 +23,7 @@ void filter_primes(int read_fd) {
       // new child process
       case 0: {
         close(pipe_fd[1]); // close write end in the child
+        close(read_fd);    // close read end in the child ***** careful part
         filter_primes(pipe_fd[0]);
         exit(0); 
         break; 
