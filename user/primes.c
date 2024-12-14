@@ -2,13 +2,15 @@
 #include "kernel/stat.h"
 #include "user/user.h"
 
+void filter_primes(int) __attribute__((noreturn));
+
 void filter_primes(int read_fd) {
     int prime;
 
     // no more primes to read
     if (read(read_fd, &prime, sizeof(prime)) == 0) {
         close(read_fd);
-        return; 
+        exit(0);  
     }
 
     printf("prime %d\n", prime);
@@ -22,6 +24,7 @@ void filter_primes(int read_fd) {
       case 0: {
         close(pipe_fd[1]); // close write end in the child
         filter_primes(pipe_fd[0]);
+        exit(0); 
         break; 
       }
       case -1: {
