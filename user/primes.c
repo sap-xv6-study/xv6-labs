@@ -8,7 +8,7 @@ void filter_primes(int read_fd) {
     // no more primes to read
     if (read(read_fd, &prime, sizeof(prime)) == 0) {
         close(read_fd);
-        exit(0);
+        return; 
     }
 
     printf("prime %d\n", prime);
@@ -22,6 +22,7 @@ void filter_primes(int read_fd) {
       case 0: {
         close(pipe_fd[1]); // close write end in the child
         filter_primes(pipe_fd[0]);
+        break; 
       }
       case -1: {
           printf("Error: Fork failed\n");
@@ -43,6 +44,7 @@ void filter_primes(int read_fd) {
         close(read_fd);    // close read end
         wait(0);           // wait for the child process to finish
         exit(0);
+        break; 
       }
     }
 }
@@ -58,6 +60,7 @@ int main() {
       case 0: {
         close(pipe_fd[1]); // Close write end in the child
         filter_primes(pipe_fd[0]);
+        break; 
       }
       case -1: {
           printf("Error: Fork failed\n");
@@ -68,14 +71,15 @@ int main() {
       default: {
         close(pipe_fd[0]); // Close read end in the parent
 
-        // generate numbers 2 through 35
-        for (int i = 2; i <= 35; i++) {
+        // generate numbers 2 through 280
+        for (int i = 2; i <= 280; i++) {
             write(pipe_fd[1], &i, sizeof(i));
         }
 
         close(pipe_fd[1]); // close write end
         wait(0);           // wait for the child process to finish
         exit(0);
+        break; 
       }
     }
     return 0;
