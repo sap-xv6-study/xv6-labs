@@ -11,10 +11,10 @@ main(int argc, char *argv[])
     printf("Usage: secret the-secret\n");
     exit(1);
   }
-  char *end = sbrk(PGSIZE*32);
-  end = end + 9 * PGSIZE;
+  char *end = sbrk(PGSIZE*32); // alloc 32 pages (breakpoint move)
+  end = end + 9 * PGSIZE; // go to 9th page address
   strcpy(end, "my very very very secret pw is:   ");
-  strcpy(end+32, argv[1]);
+  strcpy(end+32, argv[1]); // write secret after 32byte offset
   exit(0);
 }
 
