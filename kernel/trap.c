@@ -67,10 +67,16 @@ usertrap(void)
     syscall();
   } else if((which_dev = devintr()) != 0){
     // ok
+  } else if(r_scause() == 15) { // Page fault on store
+    uint64 va = r_stval();
+    if(handle_cow_fault(p->pagetable, va) < 0) {
+      printf("usertrap(): cow page fault failed\n");
+      p->killed = 1;
+    }
   } else {
-    printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(), p->pid);
-    printf("            sepc=0x%lx stval=0x%lx\n", r_sepc(), r_stval());
-    setkilled(p);
+    printf("usertrap(): unexpected scause %lx pid=%d\n", r_scause(), p->pid);
+    printf("            sepc=%lx stval=%lx\n", r_sepc(), r_stval());
+    p->killed = 1;
   }
 
   if(killed(p))
@@ -214,5 +220,53 @@ devintr()
   } else {
     return 0;
   }
+}
+
+// handle COW page faults
+int
+handle_cow_fault(pagetable_t pagetable, uint64 va)
+{
+  pte_t *pte;
+  uint64 pa;
+  uint flags;
+  char *mem;
+
+  if(va >= MAXVA)
+    return -1;
+
+  va = PGROUNDDOWN(va);
+  pte = walk(pagetable, va, 0);
+  
+  if(pte == 0)
+    return -1;
+  
+  if((*pte & PTE_V) == 0 || (*pte & PTE_U) == 0)
+    return -1;
+    
+  if((*pte & PTE_COW) == 0)
+    return -1;
+
+  pa = PTE2PA(*pte);
+  flags = PTE_FLAGS(*pte);
+  
+  // Allocate new page
+  if((mem = kalloc()) == 0)
+    return -1;
+    
+  // Copy old page to new page
+  memmove(mem, (char*)pa, PGSIZE);
+  
+  // Map new page with write permission
+  flags &= ~PTE_COW;  // Clear COW bit
+  flags |= PTE_W;     // Set writable bit
+  
+  uvmunmap(pagetable, va, 1, 0);
+  if(mappages(pagetable, va, PGSIZE, (uint64)mem, flags) != 0) {
+    kfree(mem);
+    return -1;
+  }
+  
+  kfree((void*)pa);
+  return 0;
 }
 
